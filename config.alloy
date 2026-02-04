@@ -1,0 +1,47 @@
+// Hessity + Grafana Cloud: Metrics (Prometheus) and Logs (Loki)
+// All settings are driven by environment variables. See .env.example and README.
+
+logging {
+  level  = "info"
+  format = "logfmt"
+}
+
+// ---- Prometheus: send metrics to Grafana Cloud ----
+prometheus.remote_write "grafana_cloud" {
+  endpoint {
+    url = sys.env("GRAFANA_PROMETHEUS_URL")
+    basic_auth {
+      username = sys.env("GRAFANA_PROMETHEUS_USERNAME")
+      password = sys.env("GRAFANA_CLOUD_TOKEN")
+    }
+  }
+}
+
+// Scrape backend metrics and forward to Grafana Cloud
+prometheus.scrape "hessity_backend" {
+  targets = [
+    {"__address__" = sys.env("BACKEND_ADDRESS")}
+  ]
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+}
+
+// ---- Loki: receive logs and send to Grafana Cloud ----
+loki.write "grafana_cloud" {
+  endpoint {
+    url = sys.env("GRAFANA_LOKI_URL")
+    basic_auth {
+      username = sys.env("GRAFANA_LOKI_USERNAME")
+      password = sys.env("GRAFANA_CLOUD_TOKEN")
+    }
+  }
+}
+
+// HTTP API for log ingestion (POST /loki/api/v1/push or /loki/api/v1/raw)
+// Backend or other services can push logs here; they are forwarded to Grafana Cloud.
+loki.source.api "receiver" {
+  http {
+    listen_address = "0.0.0.0"
+    listen_port    = 3500
+  }
+  forward_to = [loki.write.grafana_cloud.receiver]
+}

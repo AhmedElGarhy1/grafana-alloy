@@ -1,0 +1,19 @@
+services:
+  alloy:
+    build: .
+    image: grafana-alloy:local
+    container_name: alloy
+    restart: unless-stopped
+    ports:
+      - "${ALLOY_PORT:-12345}:12345"
+      - "${LOKI_SOURCE_PORT:-3500}:3500"
+    volumes:
+      - alloy_data:/var/lib/alloy/data
+      # Optional: mount custom config from host (overrides image config)
+      # - ./config.alloy:/etc/alloy/config.alloy:ro
+    env_file: .env
+    environment:
+      - ALLOY_PORT=${ALLOY_PORT:-12345}
+
+volumes:
+  alloy_data:
