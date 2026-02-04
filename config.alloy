@@ -20,7 +20,7 @@ prometheus.remote_write "grafana_cloud" {
 // Scrape backend metrics and forward to Grafana Cloud
 prometheus.scrape "hessity_backend" {
   targets = [
-    {"__address__" = sys.env("BACKEND_ADDRESS")}
+    {"__address__" = sys.env("BACKEND_ADDRESS")},
   ]
   forward_to = [prometheus.remote_write.grafana_cloud.receiver]
 }
